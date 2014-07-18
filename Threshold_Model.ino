@@ -12,15 +12,16 @@
 // Define range of in/out variables.  This range is mapped on to the full input/output range, 
 // and anything outside of this is clipped.
 boolean SWstateOld, SWstateNew;
-const float range_max = 4;
-const float range_min = 0;
+const float range_max = 4.0;
+const float range_min = 0.0;
 boolean stubborn;
 
 // Required variables
 int ins[2] = {0,0};
 float fsum= 0.0;
 int state;
-
+int knobvalue=0;
+int previousknobvalue=0;
 
 TN Tn = TN(-1.0,1.0);
 
@@ -28,7 +29,7 @@ TN Tn = TN(-1.0,1.0);
 
 
 void setup () {
- 
+ Serial.begin(115200);
   //Set initial state via dip switch, option A is 0, option B is 1
   startvalue();
 }
@@ -120,6 +121,16 @@ void loop() {
      
   
   for (int reps=1; reps<1000; reps++ ){
+    
+        knobcheck();
+        
+        if (knobvalue!=previousknobvalue){
+        
+           startvalue();
+           updateOutputs();
+           previousknobvalue=knobvalue;
+           
+        }
    
        if (Tn.masterSw()==true){
     
@@ -138,6 +149,20 @@ void loop() {
        
                     
   } 
+  Serial.println(knobvalue);
+  
+}
+
+void knobcheck(){
+  
+  knobvalue=floor((Tn.pot()*4)+1);
+  if (knobvalue==5){
+    
+    knobvalue=4;
+    
+  }
+    
+  
 }
   
   
@@ -146,35 +171,36 @@ void startvalue(){
   
   if (Tn.pot()<0.5){
     
-    stubborn=true;
+    state=0;
     
   }
   else{
     
-    stubborn=false;
+    state=1;
+    
   }
   
   if(Tn.pot()<0.25){
     
-    state=0;
+    stubborn=true;
     
   }
   
  else if(Tn.pot()<0.5){
    
-   state=1;
+   stubborn=false;
    
  }
  
  else if(Tn.pot()<0.75){
    
-   state=0;
+   stubborn=false;
    
  }
  
  else{
    
-   state=1;
+   stubborn=true;
    
  }
   
@@ -185,7 +211,19 @@ void updateOutputs(){
   
   
   if (state==1){
-    Tn.colour(0,255,0);
+    
+    if (stubborn==1){
+      
+      Tn.colour(0,255,0);
+      
+    }
+      
+    if (stubborn==0){
+  
+        Tn.colour(60,255,60);
+      
+    }  
+    
     Tn.digitalWrite(1,true);
     Tn.digitalWrite(2,true);
     Tn.digitalWrite(3,true);
@@ -193,7 +231,19 @@ void updateOutputs(){
   
   
  else {
-    Tn.colour(0,0,255);
+   
+   if (stubborn==1){
+      
+      Tn.colour(0,0,255);
+      
+    }
+      
+    if (stubborn==0){
+  
+        Tn.colour(60,60,255);
+      
+    }
+    
     Tn.digitalWrite(1,false);
     Tn.digitalWrite(2,false);
     Tn.digitalWrite(3,false);
